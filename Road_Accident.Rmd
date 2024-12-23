@@ -1,0 +1,239 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library("ggplot2")
+library("dplyr")
+library("ggsci")
+library("ggpubr")
+library("forcats")
+accident_data <- read.csv("C:/Users/ranja/Downloads/Regulatory Affairs of Road Accident Data 2020 India.csv")
+head(accident_data)
+colnames(accident_data)
+```
+```{r}
+accident_data["Outcome.of.Incident"]%>%unique()
+accident_data["Cause.category"]%>%unique()
+accident_data["Cause.Subcategory"]%>%unique()
+```
+```{r}
+persons_killed <- accident_data%>%
+  filter(Outcome.of.Incident == "Persons Killed")
+a <- sum(persons_killed$Count, na.rm = TRUE)
+persons_injured <- accident_data%>%
+  filter(Outcome.of.Incident == "Greviously Injured")
+b <- sum(persons_injured$Count, na.rm = TRUE)
+minor_injuries <- accident_data%>%
+  filter(Outcome.of.Incident == "Minor Injury")
+c <- sum(minor_injuries$Count, na.rm = TRUE)
+affected_people <- data.frame(Total.injured = b,
+                              Total.killed = a,
+                              Total.Minor.Injuries = c)
+affected_people
+```
+```{r}
+accident_data <- na.omit(accident_data)
+```
+
+```{r}
+plot <- accident_data%>%
+   filter(Outcome.of.Incident == "Persons Killed")%>%
+  group_by(Cause.category)%>%
+  summarize(Total.Death = sum(Count))%>%
+  mutate(Causes = fct_reorder(Cause.category, Total.Death))
+```
+```{r}
+bar_plot <- plot%>%ggplot(aes(x = Causes, y = Total.Death, fill = Cause.category)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.6) +
+  scale_fill_npg() +
+  labs(
+    title = "Total Deaths by Cause",
+    x = "Cause Subcategory",
+    y = "Total Death",
+    fill = "Cause Subcategory"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.text = element_text(size = 6),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.title = element_text(size = 14),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  )
+print(bar_plot)
+
+  
+```
+```{r}
+cities_comparison <- accident_data%>%
+  filter(Outcome.of.Incident == "Persons Killed")%>%
+  group_by(Million.Plus.Cities)%>%
+  summarise(Fatalities = sum(Count))%>%
+  select(Cities = Million.Plus.Cities, Fatalities)
+print(cities_comparison)
+```
+```{r}
+plot <- cities_comparison%>%
+  ggplot(
+    aes(reorder(Cities, Fatalities), Fatalities)
+  )+
+  geom_bar(
+    fill = "lightgreen", colour = "black",
+           stat = "identity",
+           width = 0.9)+
+  geom_text(
+    aes(label = Fatalities),
+    cex = 2.5,
+    size = 0.9,
+    angle = 90
+  )+
+  labs(
+    title = "Fatalities by City",
+    x = "Cities",
+    y = "Total Deaths"
+  )+
+  theme_minimal()+
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 7, colour = "forestgreen"),
+    axis.text.y = element_text(hjust = 1, size = 12, colour = "maroon"),
+    axis.title = element_text(size = 14),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  )
+print(plot)
+```
+So, from this plot we got the conclusions that :
+1. Delhi is the city here most people got killed by accidents in 2020.
+2. Srinagar is the city where fatalities caused by accidents are lowest.
+
+
+```{r}
+injuries_by_cities <- accident_data%>%
+  filter(Outcome.of.Incident == "Greviously Injured")%>%
+  group_by(Million.Plus.Cities)%>%
+  summarise(Serious.Injuries = sum(Count))%>%
+  select(Cities = Million.Plus.Cities, Serious.Injuries)
+print(injuries_by_cities)
+```
+
+
+```{r}
+plot2 <- injuries_by_cities%>%
+  ggplot(
+    aes(reorder(Cities, Serious.Injuries), Serious.Injuries)
+  )+
+  geom_bar(
+    fill = "cyan", colour = "black",
+           stat = "identity",
+           width = 0.9)+
+  geom_text(
+    aes(label = Serious.Injuries),
+    size = 2,
+    angle = 90
+  )+
+  labs(
+    title = "Comparison of Cities for Accident With Serious Injuries",
+    x = "Cities",
+    y = "Number of People Injured"
+  )+
+  theme_minimal()+
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 7, colour = "forestgreen"),
+    axis.text.y = element_text(hjust = 1, size = 12, colour = "maroon"),
+    axis.title = element_text(size = 14),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  )
+print(plot2)
+```
+From this plot we see that :
+1. Most people that got seriously injured from road accidents in 2020 are from Bengaluru.
+2. Srinagar and Thiruchirapally did a great job by achieving zero serious injuries in road accidents in 2020.
+
+
+```{r}
+plot_func <- function(cause, outcome) {
+  accident_data%>%
+    filter(Cause.category == cause, Outcome.of.Incident == outcome)%>%
+    group_by(Cause.Subcategory)%>%
+    summarise(Total.outcome = sum(Count))%>%
+    ggplot(aes(reorder(Cause.Subcategory, Total.outcome), Total.outcome, fill = Cause.Subcategory))+
+    geom_bar(stat = "identity", color = "black", width = 0.9)+
+    geom_text(aes(label = Total.outcome), vjust = -0.5, size = 3)+
+    scale_fill_frontiers()+
+    labs(title = paste(cause, "-", outcome))+
+    theme_light()+
+    theme(
+       plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 12, colour = "forestgreen"),
+    axis.text.y = element_text(hjust = 1, size = 12, colour = "maroon"),
+    axis.title = element_text(size = 14),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+    )
+}
+combinations <- expand.grid(
+  cause = unique(accident_data$Cause.category),
+  outcome = unique(accident_data$Outcome.of.Incident)
+)
+plots <- lapply(1:nrow(combinations), function(i) {
+  plot_func(
+    cause = combinations$cause[i],
+    outcome = combinations$outcome[i]
+  )
+})
+print(plots)
+  
+```
+
+These plots give us the following conclusions:
+1. Most accidents due to traffic control are caused by uncontrolled traffic.
+2. Mostly people with two wheelers get seriously injured.
+3. Most accidents in staggered junctions and other undefined junctions causes just minor injuries.
+
+
+```{r}
+output_dir <- "plots"
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir)
+}
+
+
+for (i in seq_along(plots)) {
+  ggsave(
+    filename = paste0(output_dir, "/plot_", i, ".png"), 
+    plot = plots[[i]],  
+    width = 6,          
+    height = 4          
+  )
+}
+
+```
+
+```{r}
+summary_func <- function(outcome) {
+  accident_data %>%
+    filter(Outcome.of.Incident == outcome) %>%
+    group_by(Cause.category, Cause.Subcategory) %>%
+    summarise(Total.outcome = sum(Count), .groups = "drop") %>%
+    arrange(desc(Total.outcome)) %>%
+    slice_head(n = 1) 
+}
+
+outcomes <- c("Persons Killed", "Greviously Injured", "Minor Injury")
+top_causes <- lapply(outcomes, summary_func)
+result <- bind_rows(
+  lapply(seq_along(outcomes), function(i) {
+    top_causes[[i]] %>%
+      mutate(Outcome = outcomes[i])
+  })
+)
+
+print(result)
+```
+This table shows that most people affected due to accidents are caused by Sunny/clear weather and straight roads which don't make any sense if there is not overspeeding involved.
+
