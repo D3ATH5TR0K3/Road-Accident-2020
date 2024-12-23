@@ -1,8 +1,8 @@
 # Road-Accident-2020
 ---
 title: "Analysis of Road Accident Data"
-author: "[Your Name]"
-date: "`r Sys.Date()`"
+author: "[Ranjan Hazra]"
+date: "`r Sys.Date(23/12/2024)`"
 output: html_document
 ---
 
@@ -76,7 +76,7 @@ The analysis identifies the top cause and subcause for each outcome:
 - Extend the numerical summary code to include other outcomes.
 
 ## Acknowledgments
-- Data Source: [Provide dataset source]
+- Data Source: [https://data.gov.in/catalog/road-accidents-india-2020]
 - Libraries: ggplot2, dplyr.
 - Color Scheme: Frontiers color palette.
 
